@@ -1,0 +1,103 @@
+#****EJEMPLO CON LIBRERÍA DE SHAREPLUM****
+#NOTA: los usuarios y contraseñas deben ir dentro de ''
+
+from shareplum import Site
+from shareplum.site import Version
+from shareplum import Office365
+
+authcookie = Office365('https://eafit.sharepoint.com', username=NUESTRO USUARIO, password=NUESTRA CONTRASEÑA).GetCookies()
+site = Site('https://eafit.sharepoint.com/sites/Proyectoinformedecoyunturaeconomica/', version=Version.v2016, authcookie=authcookie)
+
+folder = site.Folder('Documentos Compartidos/General')
+allfiles = folder.files
+
+#De aqui tomo la relative_url (server relative url) del archivo que necesitamos, en este caso es el "último", ya que es el
+#primero que se subió al sharepoint
+#Esto solo lo tengo que usar para la identificar la relative url
+vistazo_file_info = allfiles[-1]
+relative_url = vistazo_file_info['ServerRelativeUrl']
+nombre_actual_archivo = vistazo_file_info['Name']
+
+data = folder.get_file('NData vistazo 1.09.2020 .xlsx') #O poner aqui nombre_actual_archivo
+with open('holu.xlsx', 'wb') as f:
+    f.write(data)
+    f.close()
+
+relative_url
+nombre_actual_archivo 
+
+#****Ejemplos usando Office365-REST-Python-Client****
+
+#EJEMPLO1
+#Del siguiente link saqué la base ejemplo de este código, hay que seguir los pasos que ahí dice para poder generar el client_id y el client_secret por primera vez, no sé si se 
+#puedan usar los que ya tengo ahí y esto solucione el problema de tener que cambiar las credenciales cada que se cambie de persona
+#link: https://www.cittabase.com/downloading-sharepoint-files-with-python/
+#Imagen del código http://www.cittabase.com/wp-content/uploads/2020/05/4.png
+from office365.runtime.auth.authentication_context import AuthenticationContext
+from office365.sharepoint.client_context import ClientContext
+from office365.sharepoint.files.file import File
+
+doc_url = '/sites/Proyectoinformedecoyunturaeconomica/Documentos compartidos/General/NData vistazo 1.09.2020 .xlsx'
+
+app_settings = {
+    'url': 'https://eafit.sharepoint.com/sites/Proyectoinformedecoyunturaeconomica',
+    'client_id': '02fe3840-d608-468e-b6d7-a9b5d3b4cac7',
+    'client_secret': 'rvKPhcx1G+OQONH+UvBPokzT5RwegmIe4LCbQXSJYP0=',
+}
+
+ctx_auth = AuthenticationContext(url = app_settings['url'])
+ctx_auth.acquire_token_for_app(client_id = app_settings['client_id'],
+                              client_secret = app_settings['client_secret'])
+
+ctx = ClientContext(app_settings['url'], ctx_auth)
+
+response = File.open_binary(ctx, doc_url)
+#response.raise_for_status()
+
+localpath = 'C:/Users/Usuario/NData_vistazo.xlsx'
+with open(localpath, 'wb') as local_file:
+    local_file.write(response.content)
+    
+    
+#EJEMPLO 2
+from office365.runtime.auth.authentication_context import AuthenticationContext
+from office365.sharepoint.client_context import ClientContext
+from office365.sharepoint.files.file import File
+
+url = 'https://eafit.sharepoint.com/sites/Proyectoinformedecoyunturaeconomica'
+username = NUESTRO USUARIO
+password = NUESTRA CONTRASEÑA
+relative_url = '/sites/Proyectoinformedecoyunturaeconomica/Documentos compartidos/General/NData vistazo 1.09.2020 .xlsx'
+
+ctx_auth = AuthenticationContext('https://eafit.sharepoint.com/sites/Proyectoinformedecoyunturaeconomica')
+ctx_auth.acquire_token_for_user(username, password)   
+ctx = ClientContext(url, ctx_auth)
+response = File.open_binary(ctx, relative_url)
+with open("./NData vistazo 1.09.2020.xlsx", "wb") as local_file:
+    local_file.write(response.content)
+    
+#EJEMPLO 3
+from office365.runtime.auth.authentication_context import AuthenticationContext
+from office365.sharepoint.client_context import ClientContext
+from office365.sharepoint.files.file import File
+
+url = 'https://eafit.sharepoint.com/sites/Proyectoinformedecoyunturaeconomica'
+username = NUESTRO USUARIO
+password = NUESTRA CONTRASEÑA
+relative_url = r'/sites/Proyectoinformedecoyunturaeconomica/Documentos compartidos/General/NData vistazo 1.09.2020 .xlsx'
+
+ctx_auth = AuthenticationContext(url)
+if ctx_auth.acquire_token_for_user(username, password):
+    ctx = ClientContext(url, ctx_auth)
+    web = ctx.web
+    ctx.load(web)
+    ctx.execute_query()
+    print ("Web title: {0}".format(web.properties['Title']))
+
+else:
+    print (ctx_auth.get_last_error())
+    
+filename = 'NData vistazo 1.09.2020 uno.xlsx'
+with open(filename, 'wb') as output_file:
+    response = File.open_binary(ctx, relative_url)
+    output_file.write(response.content)
