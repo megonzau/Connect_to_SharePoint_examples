@@ -1,4 +1,4 @@
-#****EJEMPLO CON LIBRERÍA DE SHAREPLUM****
+#****EJEMPLO CON LIBRERÍA DE SHAREPLUM**** Hola mundo
 #NOTA: los usuarios y contraseñas deben ir dentro de ''
 
 from shareplum import Site
